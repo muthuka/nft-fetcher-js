@@ -9,7 +9,6 @@ const path = require('path')
 const PORT = process.env.PORT || 3000
 module.exports = app;
 
-
 app.get("/", root.index);
 app.get("/test", root.info);
 app.get('/nft/info', nft.info);
