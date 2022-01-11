@@ -1,14 +1,13 @@
 {
-  "name": "node-js-getting-started",
-  "version": "0.3.0",
-  "description": "A sample Node.js app using Express 4",
+  "name": "nft-fetcher-js",
+  "version": "1.0.0",
+  "description": "NFT data fetcher in the cloud",
   "engines": {
     "node": "14.x"
   },
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "node test.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "ejs": "^3.1.5",
@@ -20,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/heroku/node-js-getting-started"
+    "url": "https://github.com/muthuka/not-fetcher-js"
   },
   "keywords": [
     "node",
