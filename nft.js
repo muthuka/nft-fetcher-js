@@ -2,7 +2,9 @@ require("dotenv").config()
 
 exports.info = function (req, res) {
 
-  getMetadata().then(
+  console.log("Parameters:", req.query.addr, "&", req.query.tok);
+
+  getMetadataFor(req.query.addr, req.query.tok).then(
     function (value) {
       res.json(value);
       console.log("Returned", value);
@@ -14,15 +16,79 @@ exports.info = function (req, res) {
     }
   );
 
-
 };
+
+async function getMetadataFor(contractAddress, tok) {
+  const Web3 = require('web3');
+  const rpcURL = process.env.WEB3_ENDPOINT;
+  const web3 = new Web3(rpcURL)
+  const contract = new web3.eth.Contract(abi, contractAddress)
+
+  // Get name
+  const name = await contract.methods.name().call();
+  console.log("Found name", name);
+
+  // Get symbol
+  const symbol = await contract.methods.symbol().call()
+  console.log("Found symbol", symbol)
+
+  // Get Owner
+  const owner = await contract.methods.owner().call()
+  console.log("Found owner", owner)
+
+  const totalTokens = await contract.getPastEvents('Transfer', {
+    filter: {
+      _from: '0x0000000000000000000000000000000000000000'
+    },
+    fromBlock: 0
+  });
+  console.log("Total:", totalTokens.length);
+
+  var foundTokenUrl = null;
+  var foundTokenImageUrl = null;
+  const forLoop = async _ => {
+    console.log('Start')
+
+    for (let index = 1; index <= totalTokens.length; index++) {
+      let tokenId = totalTokens[index - 1].returnValues.tokenId;
+      if (tokenId == tok) {
+        const tokenURL = await contract.methods.tokenURI(index).call();
+        console.log(index, " - Token Uri for tokenID", tokenId, "is", tokenURL);
+        foundTokenUrl = tokenURL;
+
+        // Let's retrieve JSON
+        const axios = require('axios')
+        const response = await axios.get(tokenURL)
+        const result = response.data;
+        console.log("JSON", result.image);
+        foundTokenImageUrl = result.image;
+      }
+    }
+
+    console.log('End')
+  }
+
+  await forLoop();
+
+  // Make up JSON
+  return {
+    "name": name,
+    "symbol": symbol,
+    "owner": owner,
+    // "mintedTokens": totalTokens.length,
+    // "events": totalTokens
+    "image": foundTokenImageUrl,
+    "tokenJson": foundTokenUrl
+  };
+}
 
 async function getMetadata() {
   const Web3 = require('web3');
   const rpcURL = process.env.WEB3_ENDPOINT;
   const web3 = new Web3(rpcURL)
 
-  const contractAddress = "0x670e72E70B5e1bBA959928CA7D38934949653761"
+  const contractAddress = "0x670e72E70B5e1bBA959928CA7D38934949653761" // NFT4
+  // const contractAddress = "0x6BF04823348CC66Ae138516284b8191d362155A1" // NFT5
   const contract = new web3.eth.Contract(abi, contractAddress)
 
   // Get name
@@ -60,8 +126,9 @@ async function getMetadata() {
   const forLoop = async _ => {
     console.log('Start')
 
-    for (let index = 0; index < totalTokens.length; index++) {
-      const tokenURL = await contract.methods.tokenURI(1).call();
+    for (let index = 1; index <= totalTokens.length; index++) {
+      console.log("Ret:", totalTokens[1].returnValues);
+      const tokenURL = await contract.methods.tokenURI(index).call();
       console.log("Token Uri:", tokenURL);
     }
 
