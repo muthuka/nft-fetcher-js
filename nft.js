@@ -75,8 +75,10 @@ async function getMetadataFor(contractAddress, tok) {
     "name": name,
     "symbol": symbol,
     "owner": owner,
-    // "mintedTokens": totalTokens.length,
-    // "events": totalTokens
+    "tokenNo": tok,
+    "contract": contractAddress,
+    "mintedTokens": totalTokens.length,
+    "events": totalTokens,
     "image": foundTokenImageUrl,
     "tokenJson": foundTokenUrl
   };
