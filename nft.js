@@ -4,7 +4,7 @@ exports.info = function (req, res) {
 
   console.log("Parameters:", req.query.addr, "&", req.query.tok);
 
-  getMetadataFor(req.query.addr, req.query.tok).then(
+  getMetadataFrom(req.query.network, req.query.addr, req.query.tok).then(
     function (value) {
       res.json(value);
       console.log("Returned", value);
@@ -18,9 +18,81 @@ exports.info = function (req, res) {
 
 };
 
+async function getMetadataFrom(network, contractAddress, tok) {
+  const Web3 = require('web3');
+  
+  var rpcURL = process.env.ROPSTEN_WEB3_ENDPOINT;
+  if (network == "mainnet") {
+    rpcURL = process.env.MAINNET_WEB3_ENDPOINT;
+  } else if (network == "kovan") {
+    rpcURL = process.env.KOVAN_WEB3_ENDPOINT;
+  }
+
+  const web3 = new Web3(rpcURL)
+  const contract = new web3.eth.Contract(abi, contractAddress)
+
+  // Get name
+  const name = await contract.methods.name().call();
+  console.log("Found name", name);
+
+  // Get symbol
+  const symbol = await contract.methods.symbol().call()
+  console.log("Found symbol", symbol)
+
+  // Get Owner
+  const owner = await contract.methods.owner().call()
+  console.log("Found owner", owner)
+
+  const totalTokens = await contract.getPastEvents('Transfer', {
+    filter: {tokenId: [tok]},
+    fromBlock: 0 ,
+    toBlock: "latest"
+  });
+  console.log("Total:", totalTokens.length);
+
+  var foundTokenUrl = null;
+  var foundTokenImageUrl = null;
+  const forLoop = async _ => {
+    console.log('Start')
+
+    for (let index = 1; index <= totalTokens.length; index++) {
+      let tokenId = totalTokens[index - 1].returnValues.tokenId;
+      if (tokenId == tok) {
+        const tokenURL = await contract.methods.tokenURI(index).call();
+        console.log(index, " - Token Uri for tokenID", tokenId, "is", tokenURL);
+        foundTokenUrl = tokenURL;
+
+        // Let's retrieve JSON
+        const axios = require('axios')
+        const response = await axios.get(tokenURL)
+        const result = response.data;
+        console.log("JSON", result.image);
+        foundTokenImageUrl = result.image;
+      }
+    }
+
+    console.log('End')
+  }
+
+  await forLoop();
+
+  // Make up JSON
+  return {
+    "name": name,
+    "symbol": symbol,
+    "owner": owner,
+    "tokenNo": tok,
+    "contract": contractAddress,
+    "mintedTokens": totalTokens.length,
+    "events": totalTokens,
+    "image": foundTokenImageUrl,
+    "tokenJson": foundTokenUrl
+  };
+}
+
 async function getMetadataFor(contractAddress, tok) {
   const Web3 = require('web3');
-  const rpcURL = process.env.WEB3_ENDPOINT;
+  const rpcURL = process.env.ROPSTEN_WEB3_ENDPOINT;
   const web3 = new Web3(rpcURL)
   const contract = new web3.eth.Contract(abi, contractAddress)
 
