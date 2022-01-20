@@ -1,5 +1,6 @@
 require("dotenv").config()
 
+
 exports.info = function (req, res) {
 
   console.log("Parameters:", req.query.addr, "&", req.query.tok);
@@ -20,7 +21,7 @@ exports.info = function (req, res) {
 
 async function getMetadataFrom(network, contractAddress, tok) {
   const Web3 = require('web3');
-  
+
   var rpcURL = process.env.ROPSTEN_WEB3_ENDPOINT;
   if (network == "mainnet") {
     rpcURL = process.env.MAINNET_WEB3_ENDPOINT;
@@ -44,8 +45,10 @@ async function getMetadataFrom(network, contractAddress, tok) {
   console.log("Found owner", owner)
 
   const totalTokens = await contract.getPastEvents('Transfer', {
-    filter: {tokenId: [tok]},
-    fromBlock: 0 ,
+    filter: {
+      tokenId: [tok]
+    },
+    fromBlock: 0,
     toBlock: "latest"
   });
   console.log("Total:", totalTokens.length);
@@ -592,4 +595,4 @@ var abi = [{
     "stateMutability": "nonpayable",
     "type": "function"
   }
-]
+];
