@@ -45,39 +45,25 @@ async function getMetadataFrom(network, contractAddress, tok) {
   console.log("Found owner", owner)
 
   const totalTokens = await contract.getPastEvents('Transfer', {
-    filter: {
-      tokenId: [tok]
-    },
     fromBlock: 0,
     toBlock: "latest"
   });
   console.log("Total:", totalTokens.length);
 
   var foundTokenUrl = null;
-  var foundTokenImageUrl = null;
-  const forLoop = async _ => {
-    console.log('Start')
+  const tokenURL = await contract.methods.tokenURI(tok).call();
+  console.log("Token Uri for tokenID", tok, "is", tokenURL);
 
-    for (let index = 1; index <= totalTokens.length; index++) {
-      let tokenId = totalTokens[index - 1].returnValues.tokenId;
-      if (tokenId == tok) {
-        const tokenURL = await contract.methods.tokenURI(index).call();
-        console.log(index, " - Token Uri for tokenID", tokenId, "is", tokenURL);
-        foundTokenUrl = tokenURL;
-
-        // Let's retrieve JSON
-        const axios = require('axios')
-        const response = await axios.get(tokenURL)
-        const result = response.data;
-        console.log("JSON", result.image);
-        foundTokenImageUrl = result.image;
-      }
-    }
-
-    console.log('End')
+  // Let's retrieve JSON
+  var foundTokenImageUrl = "";
+  var result = "";
+  if (tokenURL.includes('https://')) {
+    const axios = require('axios')
+    const response = await axios.get(tokenURL)
+    result = response.data;
+    console.log("JSON", result.image);
+    foundTokenImageUrl = result.image;
   }
-
-  await forLoop();
 
   // Make up JSON
   return {
@@ -89,7 +75,7 @@ async function getMetadataFrom(network, contractAddress, tok) {
     "mintedTokens": totalTokens.length,
     "events": totalTokens,
     "image": foundTokenImageUrl,
-    "tokenJson": foundTokenUrl
+    "tokenJson": result
   };
 }
 
