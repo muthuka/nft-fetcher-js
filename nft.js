@@ -67,15 +67,17 @@ async function getMetadataFrom(network, contractAddress, tok) {
 
   // Make up JSON
   return {
-    "name": name,
+    "tracker": name,
+    "name": result.name,
+    "description": result.description,
     "symbol": symbol,
     "owner": owner,
     "tokenNo": tok,
     "contract": contractAddress,
     "mintedTokens": totalTokens.length,
-    "events": totalTokens,
     "image": foundTokenImageUrl,
-    "tokenJson": result
+    "tokenJson": result,
+    "events": totalTokens
   };
 }
 
