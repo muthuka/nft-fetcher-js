@@ -30,7 +30,24 @@ async function getMetadataFrom(network, contractAddress, tok) {
   }
 
   const web3 = new Web3(rpcURL)
-  const contract = new web3.eth.Contract(abi, contractAddress)
+  var version = web3.version;
+  console.log("Web3: " + version); // "0.2.0"
+
+  // Get ABI from Etherscan
+  var sourceABI = abi; // default
+  var r = await getABIFromEtherscan(contractAddress, function (err, hash) {
+    if (!err) {
+      console.log("ABI found");
+    } else {
+      console.log("Error: " + err + "\n");
+    }
+  });
+
+  if (r != "Contract source code not verified" && r != "Contract source code not verified") {
+    sourceABI = JSON.parse(r);
+  }
+
+  const contract = new web3.eth.Contract(sourceABI, contractAddress)
 
   // Get name
   const name = await contract.methods.name().call();
@@ -44,11 +61,11 @@ async function getMetadataFrom(network, contractAddress, tok) {
   const owner = await contract.methods.owner().call()
   console.log("Found owner", owner)
 
-  const totalTokens = await contract.getPastEvents('Transfer', {
-    fromBlock: 0,
-    toBlock: "latest"
-  });
-  console.log("Total:", totalTokens.length);
+  // const totalTokens = await contract.getPastEvents('Transfer', {
+  //   fromBlock: 0,
+  //   toBlock: "latest"
+  // });
+  // console.log("Total:", totalTokens.length);
 
   var foundTokenUrl = null;
   const tokenURL = await contract.methods.tokenURI(tok).call();
@@ -74,10 +91,10 @@ async function getMetadataFrom(network, contractAddress, tok) {
     "owner": owner,
     "tokenNo": tok,
     "contract": contractAddress,
-    "mintedTokens": totalTokens.length,
+    // "mintedTokens": totalTokens.length,
     "image": foundTokenImageUrl,
     "tokenJson": result,
-    "events": totalTokens
+    // "events": totalTokens
   };
 }
 
@@ -147,72 +164,14 @@ async function getMetadataFor(contractAddress, tok) {
   };
 }
 
-async function getMetadata() {
-  const Web3 = require('web3');
-  const rpcURL = process.env.WEB3_ENDPOINT;
-  const web3 = new Web3(rpcURL)
+async function getABIFromEtherscan(contract) {
+  var url = "https://api.etherscan.io/api?module=contract&action=getabi&address=" + contract + "&apikey=" + process.env.ETHERSCAN_API_KEY;
+  const axios = require('axios')
+  const response = await axios.get(url)
+  const result = response.data.result;
+  // console.log("JSON", result);
 
-  const contractAddress = "0x670e72E70B5e1bBA959928CA7D38934949653761" // NFT4
-  // const contractAddress = "0x6BF04823348CC66Ae138516284b8191d362155A1" // NFT5
-  const contract = new web3.eth.Contract(abi, contractAddress)
-
-  // Get name
-  const name = await contract.methods.name().call();
-  console.log("Found name", name);
-
-  // Get symbol
-  const symbol = await contract.methods.symbol().call()
-  console.log("Found symbol", symbol)
-
-  // Get Owner
-  const owner = await contract.methods.owner().call()
-  console.log("Found owner", owner)
-
-  // Get token URI
-  // const tokenURL = await contract.methods.tokenURI(1).call();
-  // console.log("First token Uri:", tokenURL);
-
-  const totalTokens = await contract.getPastEvents('Transfer', {
-    filter: {
-      _from: '0x0000000000000000000000000000000000000000'
-    },
-    fromBlock: 0
-  });
-  console.log("Total:", totalTokens.length);
-  // console.log("Ret:", totalTokens[1].returnValues);
-  // console.log("Raw:", totalTokens[1].raw);
-
-  // Get all token IDs of the owner
-  // for await (i = 1; i <= totalTokens.length; i++) {
-  //   const tokenURL = await contract.methods.tokenURI(1).call();
-  //   console.log("Token Uri:", tokenURL);
-  // }
-
-  const forLoop = async _ => {
-    console.log('Start')
-
-    for (let index = 1; index <= totalTokens.length; index++) {
-      console.log("Ret:", totalTokens[1].returnValues);
-      const tokenURL = await contract.methods.tokenURI(index).call();
-      console.log("Token Uri:", tokenURL);
-    }
-
-    console.log('End')
-  }
-
-  await forLoop();
-
-  // let tokens = await contract.tokensOfOwner(owner)
-  // console.log("Owner has tokens: ", tokens);
-
-  // Make up JSON
-  return {
-    "name": name,
-    "symbol": symbol,
-    "owner": owner,
-    "mintedTokens": totalTokens.length,
-    // "events": totalTokens
-  };
+  return result;
 }
 
 var abi = [{
