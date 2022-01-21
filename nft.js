@@ -61,6 +61,13 @@ async function getMetadataFrom(network, contractAddress, tok) {
   const owner = await contract.methods.owner().call()
   console.log("Found owner", owner)
 
+  // Check supportsInterface
+  var existsInteface = await contract.methods.supportsInterface(web3.utils.toHex('0x01ffc9a7')).call();
+  console.log("ERC165 supported: " +  existsInteface);
+
+  existsInteface = await contract.methods.supportsInterface(web3.utils.toHex('0x80ac58cd')).call();
+  console.log("ERC721 supported: " +  existsInteface);
+
   // const totalTokens = await contract.getPastEvents('Transfer', {
   //   fromBlock: 0,
   //   toBlock: "latest"
